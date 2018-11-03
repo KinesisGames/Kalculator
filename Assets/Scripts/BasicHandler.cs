@@ -1,3 +1,10 @@
+// This Script is to handle Basic operations such as Addition, Substraction, Multiplication and Division. 
+// It also handles decimal points and standard forms.
+
+// Concept: Convert each character on the display in char and store it in an array. Convert all that into an string array when 
+//       	'=' is pressed. At the end, the result is based on 2 arrays. One for Adding and One for Substracting. Signs are checked
+//			and multiplication/division symbols are eliminated to decide in which of the above arrays a particular number goes.
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -48,10 +55,12 @@ public class BasicHandler : MonoBehaviour {
 
 	public int MD_case = 0;
 
+	// Sets the Display where numbers are displayed to empty.
 	void Awake() {
 		Display.text = "";
 	}
 
+	// Initialize main arrays that will be used.
 	void Start() {
 		CharacterArray = new char[16384];
 		StringArray = new string[16384];
@@ -60,6 +69,7 @@ public class BasicHandler : MonoBehaviour {
 		ExponentialArrayX = new string[16384];
 	}
 
+	// When the '=' key is pressed, everything on the display (each character) will be appended to a string array.
 	void Update() {
 		if (stopUpdate == 0) {
 			CharacterArray = Display.text.ToCharArray();
@@ -72,6 +82,7 @@ public class BasicHandler : MonoBehaviour {
 		}
 	}
 
+	// When the '.' key is pressed, add a decimal point if possible.
 	public void Decimal() {	
 		if (NumDecimals == 0) {
 			Display.text += ".";
@@ -79,45 +90,41 @@ public class BasicHandler : MonoBehaviour {
 		}
 	}
 
+	// This is called whenever the '=' is pressed.
 	public void EqualTo() {
-		stopUpdate = 1;
-		RepairString();
+		stopUpdate = 1; // So that it does not continue to convert the display to string array, look at the Multiplication/Division function to undertand why.
+		RepairString(); // Will check if there are 2 or more signs beside each other and simplify that. (+-, -+, ++, --).
 		for (int i = 0; i < StringArray.Length; i++) {
 			if (StringArray[i] == null) {
-				break;
+				break; // End of Array.
 			}
 			if (StringArray[i] == "*") {
-				Debug.Log("Multiplying...");
 				Multiplication(i);
 			}
 			if (StringArray[i] == "/") {
-				//Debug.Log("Dividing...");
 			 	Division(i);
 			}
 		}
-		//Debug.Log("StringArray[0]: " + StringArray[0]);
-		for (int i = 0; i < StringArray.Length; i++) {
+		for (int i = 0; i < StringArray.Length; i++) { // If theres' no '*' or '/', then the first number of the array needs to be found.
 			if (StringArray [i] == null) {
 				break;
 			}
-			if (StringArray[i] == "E") {
-				i += 2;
+			if (StringArray[i] == "E") { // Too long numbers are converted in '<Number in standard form>E[+ or *]<Exponent>' by Unity itself.
+				i += 2;					//  We Will convert it into a long number afterwards. 
 			} else if ((StringArray[i] == "+") || (StringArray[i] == "-") || (StringArray[i] == "*") || (StringArray[i] == "/")) {
-				if (i == 0) {
-					break;
+				if (i == 0) { // There needs to be no sign before a number if we want to proceed. Other functions will do the same thing if 
+					break;    // there's a sign before. That part is just used to store the first num. (e.g. In '1 + 2 + 3', 1 will be stored here.)
 				}
-				for (int k = 0; k < i; k++) {
-					if (AddOnce == 0) {
-						FirstNum += StringArray[k];
-						//Debug.Log(StringArray[k]);
+				for (int k = 0; k < i; k++) { // Will be storing the number from position 0 to the closest sign.
+					if (AddOnce == 0) { // AddOnce is set by Multiplication or Division funtion if they've already taken care of the First Number. 
+						FirstNum += StringArray[k]; 
 					}
 				}
 				AddOnce = 1;
 			}
 		}
-		FirstNum = ClarifyExponential(FirstNum, false);
-		//Debug.Log("FirstNum: " + FirstNum);
-		for (int i = 0; i < StringArray.Length; i++) {
+		FirstNum = ClarifyExponential(FirstNum, false); // Converts the number, if in exponential form to a really long number.
+		for (int i = 0; i < StringArray.Length; i++) { // Checks if there's a '+' sign or a '-' sign and go through Addition/Substraction.
 			if (StringArray[i] == null) {
 				break;
 			}
@@ -126,36 +133,29 @@ public class BasicHandler : MonoBehaviour {
 			}
 			if (StringArray[i] == "+") {
 				i += 1;
-				//Debug.Log("Adding...");
 				Addition(i);
 			}
 			if (StringArray[i] == "-") {
 				i += 1;
-				//Debug.Log("Substracting...");
 				Substraction(i);
 			}
 		}
-		//Debug.Log("Performing Operation...");
-		PerformOperation();
-		//Debug.Log("Operation Done.");
-		//Debug.Log("Result: " + Result.ToString());
+		PerformOperation(); // Function to calculate the final result.
 		Display.text = Result.ToString();
-		//Debug.Log("Displayed!");
 		Reset();
-		//Debug.Log("Resetted.");
 	}
 
-	public void BackSpace() {
-		tempchar = Display.text.Substring(Display.text.Length - 1);
+	public void BackSpace() { // Called whenever the user wishes to remove a character.
+ 		tempchar = Display.text.Substring(Display.text.Length - 1); // Gets the last character inputted, the rightmost one.
 
-		if (tempchar == ".") {
-			NumDecimals = 0;
+		if (tempchar == ".") { 
+			NumDecimals = 0; // So that we can put a decimal point again if we erased it.
 		}
 
-		if (Display.text.Length == 1) {
+		if (Display.text.Length == 1) { // If the display had only 1 character then logically it would now be blank.
 			Display.text = "";
 		} else if ((tempchar == "+") || (tempchar == "-") || (tempchar == "*") || (tempchar == "/")) {
-			Display.text = Display.text.Remove(Display.text.Length - 1);
+			Display.text = Display.text.Remove(Display.text.Length - 1); // Erases that last character if it is a sign and tells the program that another decimal point can be entered.
 			NumDecimals = 0;
 			for (int i = StringArray.Length - 1; i >= 0; i--) {
 				if (StringArray[i] == null) {
@@ -164,173 +164,69 @@ public class BasicHandler : MonoBehaviour {
 				if ((StringArray[i] != "+") && (StringArray[i] != "-") && (StringArray[i] != "*") && (StringArray[i] != "/")) {
 					tempchar = StringArray[i];
 					if (tempchar == ".") {
-						NumDecimals = 1;
+						NumDecimals = 1; // After erasing the sign, if the number before had a decimal point, then we don't want that the user inputs a decimal point again.
 					}
 				}
 			}
 		} else {
-			Display.text = Display.text.Remove(Display.text.Length - 1);
+			Display.text = Display.text.Remove(Display.text.Length - 1); // If no sign is to be erased, then erase whatever the last character is.
 		}
 	}
 
-	public string ClarifyExponential(string thisString, bool Convert) {
-		ExponentialArray = thisString.ToCharArray();
-		tempExpResult = "";
+	public string ClarifyExponential(string thisString, bool Convert) { // Unity by default converts a long number into a standard form one. 
+		ExponentialArray = thisString.ToCharArray();                   //  So we want to change that to a long number itself.
+		tempExpResult = "";                                           //   The format is '<Number>E< + or - ><power of Ten>.'
 		tempLength = "";
 		powerOfTen = "";
 		Exp_Pos = 0;
 		r_case = false;
 		for (int x = 0; x < ExponentialArray.Length; x++) {
-			if (ExponentialArray[x].ToString() == "E") {
+			if (ExponentialArray[x].ToString() == "E") { // Is the number in the previouly mentioned format?
 				Exp_Pos = x;
-				if (ExponentialArray[x + 1].ToString() == "+") {
+				if (ExponentialArray[x + 1].ToString() == "+") { // We want to multiply by 10 if the Power of Ten is a positive one.
 					ExpOperation = "+";
 					for (int y = x + 2; y < ExponentialArray.Length; y++) {
-						powerOfTen += ExponentialArray[y].ToString();
+						powerOfTen += ExponentialArray[y].ToString(); // Store the Power of Ten here as it is the number after the 'E+'.
 					}
 				} else {
-					ExpOperation = "-";
+					ExpOperation = "-"; // We want to divide by 10 if the Power of Ten is a negative one.
 					for (int y = x + 2; y < ExponentialArray.Length; y++) {
-						powerOfTen += ExponentialArray[y].ToString();
-						//Debug.Log("Power of Ten: " + powerOfTen);
+						powerOfTen += ExponentialArray[y].ToString(); // Store the Power of Ten here as it is the number after the 'E-'.
 					}
 				}
 				break; 
 			} else {
-				tempExpResult += ExponentialArray[x].ToString();
+				tempExpResult += ExponentialArray[x].ToString(); // Store the num before the 'E' or if there's no 'E', the number passed as the parameter.
 			}
 		}
-
-		/*if ((Convert) && (tempExpResult.Length > 4)) {
-			if (Exp_Pos != 0) {
-				for (int w = 0; w < Exp_Pos; w++) {
-					if ((ExponentialArray[w].ToString() == ".") && (ExpOperation == "+")) {
-						powerOfTen = (int.Parse(powerOfTen) - (Exp_Pos - (w + 1))).ToString();
-					} else if ((ExponentialArray[w].ToString() == ".") && (ExpOperation == "-")) {
-						powerOfTen = (int.Parse(powerOfTen) + (Exp_Pos - (w + 1))).ToString();
-					} else {
-						tempExpResult += ExponentialArray[w].ToString();
-					}
-				}
-			}
-
-			tempLength = (tempExpResult.Length).ToString();
-			ExponentialArray = tempExpResult.ToCharArray();
-			tempExpResult = "";
-			for (int i = 0; i < ExponentialArray.Length; i++) {
-				if (ExponentialArray[i].ToString() == null) {
-					break;
-				}
-				ExponentialArrayX[i] = ExponentialArray[i].ToString();
-			}
-
-			for (int m = 3; m >= 0; m--) {
-				if (((int.Parse(ExponentialArrayX[m].ToString()) >= 5) || (r_case)) && (m > 0) && (ExponentialArrayX[m - 1].ToString() != "9")) {
-					ExponentialArrayX[m - 1] = (int.Parse(ExponentialArrayX[m - 1].ToString()) + 1);
-					r_case = false;
-				} else if (((int.Parse(ExponentialArrayX[m].ToString()) >= 5) || (r_case)) && (m > 0) && (ExponentialArrayX[m - 1].ToString() == "9")) {
-					ExponentialArrayX[m - 1] = '0';
-					r_case = true;
-				}
-			}
-
-			for (int n = 0; n <= 3; n++) {
-				if (r_case) {
-					tempExpResult += (10).ToString();
-					r_case = false;
-					n += 1;
-				}
-				if (n == 1) {
-					tempExpResult += ".";
-				}
-				tempExpResult += ExponentialArrayX[n].ToString();
-			}
-
-			if (int.Parse(powerOfTen) != 0) {
-				if (Operation == "+") {
-					tempExpResult = tempExpResult + "E+" + (int.Parse(powerOfTen) + 1).ToString();
-				} else {
-					tempExpResult = tempExpResult + "E-" + (int.Parse(powerOfTen) + 1).ToString();
-				}
-			}
-
-			return tempExpResult;
-		}*/
 
 		if (Exp_Pos != 0) {
 			tempExpResult = "";
-		} else if (Exp_Pos == 0) {
+		} else if (Exp_Pos == 0) { // There was no 'E'. Everything is fine. Return the number as it was passed.
 			return tempExpResult;
 		}
 		for (int w = 0; w < Exp_Pos; w++) {
-			if ((ExponentialArrayX[w].ToString() == ".") && (ExpOperation == "+")) {
-				powerOfTen = (int.Parse(powerOfTen) - (Exp_Pos - (w + 1))).ToString();
-			} else if ((ExponentialArrayX[w].ToString() == ".") && (ExpOperation == "-")) {
-				powerOfTen = (int.Parse(powerOfTen) + (Exp_Pos - (w + 1))).ToString();
+			if ((ExponentialArrayX[w].ToString() == ".") && (ExpOperation == "+")) {    // If there's a decimal point, substract the number of places needed
+				powerOfTen = (int.Parse(powerOfTen) - (Exp_Pos - (w + 1))).ToString(); //  to be moved from the power of ten.
+			} else if ((ExponentialArrayX[w].ToString() == ".") && (ExpOperation == "-")) { // If there's a decimal point, add the number of places needed
+				powerOfTen = (int.Parse(powerOfTen) + (Exp_Pos - (w + 1))).ToString(); //  to be moved to the power of ten.
 			} else {
-				tempExpResult += ExponentialArrayX[w].ToString();
+				tempExpResult += ExponentialArrayX[w].ToString(); // No decimal point (yet)? Just append the other numbers then.
 			}
 		}
-		//Debug.Log("Power of Ten: " + powerOfTen);
-		if ((ExpOperation == "+") && (int.Parse(powerOfTen) > 0)) {
+		if ((ExpOperation == "+") && (int.Parse(powerOfTen) > 0)) { // Power of ten is Positive! Just add '0s' at the end of the string.
 			for (int z = 1; z <= int.Parse(powerOfTen); z++) {
 				tempExpResult = tempExpResult + "0";
 			}
-		} else if ((ExpOperation == "-") && (int.Parse(powerOfTen) > 0)) {
-			for (int z = 1; z < int.Parse(powerOfTen); z++) {
+		} else if ((ExpOperation == "-") && (int.Parse(powerOfTen) > 0)) { // Power of ten is Negative! Just add a decimal point and '0s' 
+			for (int z = 1; z < int.Parse(powerOfTen); z++) {             //  at the start of the string.
 				tempExpResult = "0" + tempExpResult;
 			}
 			tempExpResult = "0." + tempExpResult;
 		}
 
 		return tempExpResult;
-		//Debug.Log("tempExpResult: " + tempExpResult.ToString());
 	}
-
-	/*public string StandardForm (string s_convert) {
-		s_convert = ClarifyExponential(s_convert, false);
-		StandardArray = s_convert.ToCharArray();
-		Exponent = 0;
-		s_Operation = "+";
-		for (int i = 0; i < StandardArray.Length; i++) {
-			if (StandardArray[i] == ".") {
-				for (int j = (i + 1); j < StandardArray.Length; j++) {
-					if (StandardArray[j] != 0) {
-						for (int k = j; k < StandardArray.Length; k++) {
-							CutPart += StandardArray[k];
-						}
-						s_Operation = "-";
-						Exponent = (StandardArray.Length - (i + 1)) - 3;
-					}
-				}
-			}
-		}
-
-		BrokenArray = CutPart.ToCharArray();
-		if ((s_Operation == "-") && (BrokenArray.Length >= 2)) {
-			CutPart = BrokenArray[0] + ".";
-			for (int i = 1; i < 4; i++) {
-				if (BrokenArray[i] == null) {
-					break;
-				}
-				if (i == 3) {
-					if (int.Parse(BrokenArray[4]) > 4) {
-						if ((int.Parse(BrokenArray[3]) + 1) >= 10) {
-							CutPart += "0";
-						} else {
-							CutPart += (int.Parse(BrokenArray[3]) + 1).ToString();
-						}
-					} else {
-						CutPart += BrokenArray[i].ToString();
-					}
-					break;
-				} else {
-					CutPart += BrokenArray[i].ToString();
-				}
-			}
-
-		}
-	}*/
 
 	public void Addition(int i) {
 		for (int j = i; j < StringArray.Length; j++) {
@@ -338,15 +234,12 @@ public class BasicHandler : MonoBehaviour {
 				break;
 			}
 			if (((StringArray[j] != "+") && (StringArray[j] != "-") && (StringArray[j] != "*") && (StringArray[j] != "/")) || (((StringArray[j - 1]) == "E") && (j > 1))) {
-				AddArray[AddCount] += StringArray[j];
+				AddArray[AddCount] += StringArray[j]; // Until we meet a sign or the end of the Array, add the number from the position of '+' to our AddArray.
 			} else {
 				break;
 			}
-			//Debug.Log(AddArray[AddCount] + " at position: " + AddCount);
 		}
-		//Debug.Log("Addition Over - Part 1.");
 		AddArray[AddCount] = ClarifyExponential(AddArray[AddCount], false);
-		//Debug.Log("Addition Over - Part 2.");
 		AddCount += 1;		
 	}
 
@@ -356,7 +249,7 @@ public class BasicHandler : MonoBehaviour {
 				break;
 			}
 			if (((StringArray[j] != "+") && (StringArray[j] != "-") && (StringArray[j] != "*") && (StringArray[j] != "/")) || (((StringArray[j - 1]) == "E") && (j > 1))) {
-				SubstractArray[SubstractCount] += StringArray[j];
+				SubstractArray[SubstractCount] += StringArray[j]; // Until we meet a sign or the end of the Array, add the number from the position of '-' to our SubstractArray.
 			} else {
 				break;
 			}
@@ -365,25 +258,25 @@ public class BasicHandler : MonoBehaviour {
 		SubstractCount += 1;		
 	}
 
-	public void Multiplication(int i) {
+	public void Multiplication(int i) { // We need to find out both the number before and after the '*' this time.
 		StringArray[i] = "0";
 		m_temp1 = "";
 		m_temp2 = "";
 		for (int j = i; j >= 0; j--) {
-			if (j == 0) {
+			if (j == 0) { // If we're at the first position and there's no sign, then the number is positive.
 				m_process = "+";
 				AddOnce = 1;
-				for (int k = j; k < i; k++) {
+				for (int k = j; k < i; k++) { // Add that number to our variable.
 					m_temp1 += StringArray[k];
-					StringArray[k] = "0";
+					StringArray[k] = "0"; // Replace the position(s) that number took as '0'.
 				}
 				break;
 			}
-			if (StringArray[j - 1] == "E") {
+			if (StringArray[j - 1] == "E") { // Don't want errors due to that 'E' and its signs, eh?
 				j -= 2;
 			}
-			if (j == 0) {
-				m_process = "+";
+			if (j == 0) { // Why we repeat that check again? Check the if just above! Also, we can't put the if selection above on top as we
+				m_process = "+"; // would get an error if the position 'j - 1' did not exist.
 				AddOnce = 1;
 				for (int k = j; k < i; k++) {
 					m_temp1 += StringArray[k];
@@ -391,18 +284,18 @@ public class BasicHandler : MonoBehaviour {
 				}
 				break;
 			}
-			if (MD_case == 1) {
+			if (MD_case == 1) { // This variable is set to 1 if there's a multiplication after a division or vice-versa.
 				m_process = d_process;
-				m_temp1 = d_tempResult.ToString();
+				m_temp1 = d_tempResult.ToString(); // The result of the division is set as the number before the multiplication sign then.
 				MD_case = 0;
 				break;
 			}
-			if (m_case == 1) {
+			if (m_case == 1) { // This variable is set to one if there's another multiplication after the current one.
 				m_temp1 = m_tempResult.ToString();
 				m_case = 0;
 				break;
 			}
-			if (StringArray[j] == "+") {
+			if (StringArray[j] == "+") { // There's a '+' sign before the number before the '*' sign. To the Addition Array.
 				j += 1;
 				m_process = "+";
 				for (int k = j; k < i; k++) {
@@ -411,7 +304,7 @@ public class BasicHandler : MonoBehaviour {
 				}
 				break;
 			}
-			if (StringArray[j] == "-") {
+			if (StringArray[j] == "-") { // There's a '-' sign before the number before the '*' sign. To the Substraction Array.
 				j += 1;
 				m_process = "-";
 				for (int k = j; k < i; k++) {
@@ -422,10 +315,8 @@ public class BasicHandler : MonoBehaviour {
 			}
 		}
 
-		//Debug.Log("Half Multiplication Reached.");
-
 		i += 1;
-		if (StringArray[i] == m_process) {
+		if (StringArray[i] == m_process) { // Checks what sign, if any, is found after the '*' sign to determine the end Array.
 			m_process = "+";
 			StringArray[i] = "0";
 		} else if ((StringArray[i] == "+") || (StringArray[i] == "-")) {
@@ -447,67 +338,57 @@ public class BasicHandler : MonoBehaviour {
 				k += 2;
 			}
 			if ((StringArray[k] == "+") || (StringArray[k] == "-") || (StringArray[k] == "*") || (StringArray[k] == "/")) {
-				//Debug.Log("In Loop.");
-				for (int l = i; l < k; l++) {
-					//Debug.Log(StringArray[l]);
+				for (int l = i; l < k; l++) { // Stores the number found after the '*' sign.
 					m_temp2 += StringArray[l];
 					StringArray[l] = "0";
 				}
 				break;
 			}		
 		}
-		if (m_temp2 == "") {
+		if (m_temp2 == "") { // Stores the number after the '*' sign if it was the last number inputted.
 			for (int k = i; k < StringArray.Length; k++) {
 				m_temp2 += StringArray[k];
 				StringArray[k] = "0";
 			}
 		}
 
-		//Debug.Log(m_temp1 + " before_1");
+		// Represents the number in a normal format if they were in the standard form format.
+		
 		m_temp1 = ClarifyExponential(m_temp1, false);
-		//Debug.Log(m_temp1 + " after_1");
-		//Debug.Log(m_temp2 + " before_2");
 		m_temp2 = ClarifyExponential(m_temp2, false);
-		//Debug.Log(m_temp2 + " after_2");
 
-		m_tempResult = float.Parse(m_temp1) * float.Parse(m_temp2);
+		m_tempResult = float.Parse(m_temp1) * float.Parse(m_temp2); // Result of the Multiplication.
 
-		//Debug.Log("Temp1: " + m_temp1);
-		//Debug.Log("Temp2: " + m_temp2);
-		//Debug.Log("TempResult: " + m_tempResult.ToString());
-
-		if ((m_process == "+") && (m_case == 0) && (MD_case == 0)) {
+		if ((m_process == "+") && (m_case == 0) && (MD_case == 0)) { // Adds that Result to the Addition Array if it was a positive one.
 			AddArray[AddCount] = m_tempResult.ToString();
-			//Debug.Log(AddArray[AddCount]);
 			AddCount += 1;
 		}
 
-		if ((m_process == "-") && (m_case == 0) && (MD_case == 0)) {
+		if ((m_process == "-") && (m_case == 0) && (MD_case == 0)) { // Adds that Result to the Substraction Array if it was a negative one.
 			SubstractArray[SubstractCount] = m_tempResult.ToString();
-			//Debug.Log(SubstractArray[SubstractCount]);
 			SubstractCount += 1;
 		}		
 	}
 	
-	public void Division(int i) {
+	public void Division(int i) { // We need to find out both the number before and after the '/' this time.
 		StringArray[i] = "0";
 		d_temp1 = "";
 		d_temp2 = "";
 		for (int j = i; j >= 0; j--) {
-			if (j == 0) {
+			if (j == 0) { // If we're at the first position and there's no sign, then the number is positive.
 				d_process = "+";
 				AddOnce = 1;
-				for (int k = j; k < i; k++) {
+				for (int k = j; k < i; k++) { // Add that number to our variable.
 					d_temp1 += StringArray[k];
-					StringArray[k] = "0";
+					StringArray[k] = "0"; // Replace the position(s) that number took as '0'.
 				}
 				break;
 			}
-			if (StringArray[j - 1] == "E") {
+			if (StringArray[j - 1] == "E") { // Don't want errors due to that 'E' and its signs, eh?
 				j -= 2;
 			}
-			if (j == 0) {
-				d_process = "+";
+			if (j == 0) { // Why we repeat that check again? Check the if just above! Also, we can't put the if selection above on top as we
+				d_process = "+"; // would get an error if the position 'j - 1' did not exist.
 				AddOnce = 1;
 				for (int k = j; k < i; k++) {
 					d_temp1 += StringArray[k];
@@ -515,18 +396,18 @@ public class BasicHandler : MonoBehaviour {
 				}
 				break;
 			}
-			if (MD_case == 1) {
+			if (MD_case == 1) { // This variable is set to 1 if there's a division after a multiplication or vice-versa.
 				d_process = m_process;
 				d_temp1 = m_tempResult.ToString();
 				MD_case = 0;
 				break;
 			}
-			if (d_case == 1) {
+			if (d_case == 1) { // This variable is set to one if there's another division after the current one.
 				d_temp1 = d_tempResult.ToString();
 				d_case = 0;
 				break;
 			}
-			if (StringArray[j] == "+") {
+			if (StringArray[j] == "+") { // There's a '+' sign before the number before the '/' sign. To the Addition Array.
 				j += 1;
 				d_process = "+";
 				for (int k = j; k < i; k++) {
@@ -535,7 +416,7 @@ public class BasicHandler : MonoBehaviour {
 				}
 				break;
 			}
-			if (StringArray[j] == "-") {
+			if (StringArray[j] == "-") { // There's a '-' sign before the number before the '/' sign. To the Substraction Array.
 				j += 1;
 				d_process = "-";
 				for (int k = j; k < i; k++) {
@@ -547,7 +428,7 @@ public class BasicHandler : MonoBehaviour {
 		}
 
 		i += 1;
-		if (StringArray[i] == d_process) {
+		if (StringArray[i] == d_process) { // Checks what sign, if any, is found after the '/' sign to determine the end Array.
 			d_process = "+";
 			StringArray[i] = "0";
 		} else if ((StringArray[i] == "+") || (StringArray[i] == "-")) {
@@ -569,44 +450,40 @@ public class BasicHandler : MonoBehaviour {
 				k += 2;
 			}
 			if ((StringArray[k] == "+") || (StringArray[k] == "-") || (StringArray[k] == "*") || (StringArray[k] == "/")) {
-				for (int l = i; l < k; l++) {
+				for (int l = i; l < k; l++) { // Stores the number found after the '/' sign.
 					d_temp2 += StringArray[l];
 					StringArray[l] = "0";
 				}
 				break;
 			}
 		}
-		if (d_temp2 == "") {
+		if (d_temp2 == "") { // Stores the number after the '/' sign if it was the last number inputted.
 			for (int k = i; k < StringArray.Length; k++) {
 				d_temp2 += StringArray[k];
 				StringArray[k] = "0";
 			}
 		}
 
+		// Represents the number in a normal format if they were in the standard form format.
+
 		d_temp1 = ClarifyExponential(d_temp1, false);
 		d_temp2 = ClarifyExponential(d_temp2, false);
 
-		d_tempResult = float.Parse(d_temp1) / float.Parse(d_temp2);
+		d_tempResult = float.Parse(d_temp1) / float.Parse(d_temp2); // Result of the Division.
 
-		Debug.Log("d_Temp1: " + d_temp1);
-		Debug.Log("d_Temp2: " + d_temp2);
-		//Debug.Log("TempResult: " + m_tempResult.ToString());
-
-		if ((d_process == "+") && (d_case == 0) && (MD_case == 0)) {
+		if ((d_process == "+") && (d_case == 0) && (MD_case == 0)) { // Adds that Result to the Addition Array if it was a positive one.
 			AddArray[AddCount] = d_tempResult.ToString();
-			//Debug.Log(AddArray[AddCount]);
 			AddCount += 1;
 		}
 
-		if ((d_process == "-") && (d_case == 0) && (MD_case == 0)) {
+		if ((d_process == "-") && (d_case == 0) && (MD_case == 0)) { // Adds that Result to the Substraction Array if it was a negative one.
 			SubstractArray[SubstractCount] = d_tempResult.ToString();
-			//Debug.Log(SubstractArray[SubstractCount]);
 			SubstractCount += 1;
 		}		
 	}
 	
 
-	public void RepairString() {
+	public void RepairString() { // Checks if there's 2 or more like or unlike signs side by side and simplifies that.
 		for (int i = StringArray.Length - 1; i > 0; i--) {
 			if ((StringArray[i] != "") && (StringArray[i] != null)) {
 				if ((StringArray[i] == "+") || (StringArray[i] == "-")) {
@@ -628,31 +505,26 @@ public class BasicHandler : MonoBehaviour {
 	}
 
 	public void PerformOperation() {
-		for (int i = 0; i < AddArray.Length; i++) {
-			Debug.Log("Add_Array: " + i + " " + AddArray[i]);
+		for (int i = 0; i < AddArray.Length; i++) { // Adds the content of the Addition Array to the end result.
 			if ((AddArray[i] == null) || (AddArray[i] == "")) {
 				break;
 			} else {
 				AddResult_temp += AddArray[i];
 				Result += double.Parse(AddArray[i]);
 			}
-			//Debug.Log("Result: " + Result);
-			//Debug.Log("AddResult in String: " + AddResult_temp);
 		}
-		for (int i = 0; i < SubstractArray.Length; i++) {
-			//Debug.Log("Substract_Array: " + i + " " + SubstractArray[i]);
+		for (int i = 0; i < SubstractArray.Length; i++) { // Substracts the content of the Substraction Array from the end result.
 			if ((SubstractArray[i] == null) || (SubstractArray[i] == "")) {
 				break;
 			} else {
 				SubstractResult_temp += SubstractArray[i];
 				Result -= double.Parse(SubstractArray[i]);
 			}
-			//Debug.Log("Result: " + Result);
 		}
 		Result += double.Parse(FirstNum);
 	}
 
-	public void Reset() {
+	public void Reset() { // Want me to explain what this function does too? :v
 		for (int i = 0; i < AddArray.Length; i++) {
 			if (AddArray[i] == null) {
 				break;
@@ -692,4 +564,4 @@ public class BasicHandler : MonoBehaviour {
 		d_tempResult = 0.0f;
 		Result = 0.0d;
 	}
-}
+}	

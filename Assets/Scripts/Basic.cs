@@ -1,3 +1,5 @@
+// This Script only handles input to the Display Screen whenever a UI Button or Keyboard Key is pressed.
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
