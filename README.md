@@ -10,4 +10,4 @@ This is a calculator app that is yet to be finished. I'll need some help from aw
 - Basic functions. (Addition, Substraction, Multiplication, Division)
 
 ### Note: Before attempting to add new features, issues need to be fixed. Also, always create new branches and Pull Requests.
-**__ Only the c# script found at /Assets/Scripts/BasicHandler.cs needs to be modified. __**
+**Only the c# script found at /Assets/Scripts/BasicHandler.cs needs to be modified.**
